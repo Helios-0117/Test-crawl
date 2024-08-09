@@ -3,6 +3,7 @@ from urllib.request import urlopen
 from flask import Flask, request, abort
 from argparse import ArgumentParser
 from bs4 import BeautifulSoup
+from test__openai import chat
 from linebot import LineBotApi, WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (Configuration,ApiClient,MessagingApi,ReplyMessageRequest,TextMessage)
@@ -20,6 +21,7 @@ n1 = td[1].getText()  # 特獎
 
 
 app = Flask(__name__)
+key = os.getenv('Chat_key',None)
 Secret = os.getenv('Linebot_Secret', None)
 Token = os.getenv('Linebot_Token',None)
 line_bot_api = LineBotApi(Token)
@@ -109,9 +111,14 @@ def handle_message(event):
             TextSendMessage(text='頭獎: '+str(n1)))
         
     else:
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="只有1-6的數字"))
+        if key and event.message.text:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=chat(event.message.text,key)))
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text='ChapGPT Error'))
 
 if __name__ == "__main__":
     app.run()
