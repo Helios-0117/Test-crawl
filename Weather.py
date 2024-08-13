@@ -58,7 +58,7 @@ def callback():
         abort(400)
     return 'OK'
 
-def City(input):
+def City(user_city):
     ssl._create_default_https_context = ssl._create_unverified_context
     response = urlopen(CWA_url)
     data = response.read()
@@ -70,28 +70,41 @@ def City(input):
         # print(location['locationName']) 城市名稱
         city_name = location['locationName']
 
-        Forecast = dict()
-        # 每一種天氣預報的數值, eg: CI, Wx, PoP, MinT, MaxT
-        for element in location['weatherElement']:
-            # print(element['elementName'], end=': ') 數值的名稱, 結尾用冒號。
-            # print(element['time'][0]['parameter']['parameterName']) 取時間最靠近的數值，所以取index 0。
-            
-            # 取得資訊
-            element_name = element['elementName'] # 英文名稱
-            element_value = element['time'][0]['parameter']['parameterName']
-            if element_name in ['MinT', 'MaxT']:
-                element_unit = '°C'
-            elif element_name in ['PoP']:
-                element_unit = '%'
-            else:
-                element_unit = ''
+        if city_name == user_city:
 
-            # 轉成對應的中文名稱
-            element_name = weather_element_name[element_name]
-            Forecast[element_name] = element_value + element_unit
+            Forecast = dict()
+            # 每一種天氣預報的數值, eg: CI, Wx, PoP, MinT, MaxT
+            for element in location['weatherElement']:
+                # print(element['elementName'], end=': ') 數值的名稱, 結尾用冒號。
+                # print(element['time'][0]['parameter']['parameterName']) 取時間最靠近的數值，所以取index 0。
+                
+                # 取得資訊
+                element_name = element['elementName'] # 英文名稱
+                element_value = element['time'][0]['parameter']['parameterName']
+                if element_name in ['MinT', 'MaxT']:
+                    element_unit = '°C'
+                elif element_name in ['PoP']:
+                    element_unit = '%'
+                else:
+                    element_unit = ''
+
+                # 轉成對應的中文名稱
+                element_name = weather_element_name[element_name]
+                Forecast[element_name] = element_value + element_unit
+        else:
+            continue
 
         Forecasts[city_name] = Forecast
-    return Forecasts
+
+        bot_response = ''
+        for location in Forecasts: # 取得每一個縣市的名稱
+            bot_response += f"{location}:\n" # 加入縣市名稱訊息到response
+            for weather_key in sorted(Forecasts[location]): # 根據縣市名稱，取得縣市天氣資料
+                bot_response += f"\t\t\t\t{weather_key}: {Forecasts[location][weather_key]}\n"
+        bot_response = bot_response.strip()
+        bot_response = '請用以下的天氣資料，生成一段天氣預報&外出建議: ' + bot_response
+        
+    return chat(bot_response,Chat_key,'Helios')
 
 
 
